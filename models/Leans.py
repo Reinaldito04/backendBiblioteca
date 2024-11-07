@@ -5,3 +5,13 @@ class Lean(BaseModel):
     Username : str 
     DateStart : str 
     DateEnd : str
+    
+class LeanResponse(BaseModel):
+    IDBook : int
+    Titulo : str
+    Autor: str 
+    LeanID : int
+    Username : str 
+    DateStart : str 
+    DateEnd : str
+    
