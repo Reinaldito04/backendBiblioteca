@@ -14,4 +14,9 @@ class LeanResponse(BaseModel):
     Username : str 
     DateStart : str 
     DateEnd : str
+    DateReal : str
+    
+class LeanUpdate(BaseModel):
+    DateReal : str
+    
     
