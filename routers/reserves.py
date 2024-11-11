@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException
 from fastapi.responses import JSONResponse
 from db.db import get_conexion
-from models.Reserves import Reserve
+from models.Reserves import Reserve,ReserveUpdate
 from routers.authUser import verify_role
 router = APIRouter(
     prefix="/reserves",
@@ -44,6 +44,16 @@ async def aggReserve(
     # Responder con un mensaje de éxito que incluye el nombre del usuario
     return JSONResponse(content={"message": f"Reserva agregada exitosamente por {username}"}, status_code=200)
 
+
+@router.put('/update/{id}')
+async def update_reserve(id: int, reserve : ReserveUpdate, token_data: dict = Depends(verify_role(["Admin"]))):
+    conn = get_conexion()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE Reserves SET Estado = ? WHERE ID = ?",
+                   (reserve.Estado, id))
+    conn.commit()
+    conn.close()
+    return {"message": "Reserve updated successfully"}
 @router.get('/get')
 async def get_reserves(token_data: dict = Depends(verify_role(["Admin"]))):
     conn = get_conexion()
