@@ -4,12 +4,14 @@ from routers.authUser import router as auth
 from fastapi.middleware.cors import CORSMiddleware
 from routers.leans import router as leans
 from routers.fines import router as fines 
+from routers.reserves import router as reservers
 app = FastAPI()
 
 app.include_router(book)
 app.include_router(auth)
 app.include_router(leans)
 app.include_router(fines)
+app.include_router(reservers)
 
 origins = [
     "http://localhost:3000",  # Tu frontend en desarrollo (ajusta según sea necesario)
