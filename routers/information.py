@@ -60,3 +60,17 @@ async def get_cantity_users(token_data: dict = Depends(verify_role(["Admin"]))):
     cantity = cursor.fetchone()[0]
     conn.close()
     return {"cantity": cantity}
+
+@router.get('/getUserInfo')
+async def get_user_info(token_data: dict = Depends(verify_role(["Admin","User"]))):
+    conn = get_conexion()
+    cursor = conn.cursor()
+    cursor.execute('SELECT Username,Email,Role FROM Users WHERE Username = ?', (token_data['username'],))
+    result = cursor.fetchone()
+    
+    conn.close()
+    return {
+        "username": result[0],
+        "email": result[1],
+        "role": result[2]
+    }

@@ -114,10 +114,10 @@ def verify_role(allowed_roles: List[str]):
 async def get_users(token_data: dict = Depends(verify_role(["Admin"]))):
     conn = get_conexion()
     cur = conn.cursor()
-    cur.execute("SELECT Username,Email FROM Users")
+    cur.execute("SELECT Username,Email,Role FROM Users")
     users = cur.fetchall()
     conn.close()
-    users_list = [{"Username": user[0], "Email": user[1]} for user in users]
+    users_list = [{"Username": user[0], "Email": user[1], "Role": user[2]} for user in users]
     return users_list
 
 

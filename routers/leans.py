@@ -80,6 +80,39 @@ async def get_lean(name : str , title : str,token_data: dict = Depends(verify_ro
     conn.close()
     return leans
 
+@router.get('/username/{name}')
+async def get_lean(name : str,token_data: dict = Depends(verify_role(["Admin","User"]))):
+    conn = get_conexion()
+    cursor = conn.cursor()
+    cursor.execute("""
+                   SELECT Books.Titulo ,Books.ID,Books.Autor,Leans.IDUser
+                   ,Leans.DateStart,Leans.DateEnd,Leans.ID,Users.Username,Leans.DateReal
+                    FROM Books
+                    INNER JOIN 
+                    Leans
+                    On Books.ID = Leans.IdBook
+                    INNER JOIN 
+                    Users 
+                    ON Leans.IDUser = Users.ID
+                    WHERE Users.Username = ?;
+                   """, (name,))
+    leans = [
+        LeanResponse(
+            IDBook=row[1],
+            Titulo=row[0],
+            Autor=row[2],
+            LeanID=row[6],
+            Username=row[7],
+            DateStart=row[4],
+            DateEnd=row[5],
+            DateReal='No entregado aún' if row[8] == 'null' else row[8],
+        )
+        for row in cursor.fetchall()
+    ]
+
+    conn.close()
+    return leans
+
 
 @router.put('/update/{id}')
 async def update_lean(id: int, lean: LeanUpdate, token_data: dict = Depends(verify_role(["Admin"]))):
