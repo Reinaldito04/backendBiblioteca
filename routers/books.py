@@ -72,7 +72,14 @@ async def edit_book(
     conn.close()
     return {"message": "Book updated successfully"}
 
-    
+@router.delete('/delete/{id}')
+async def delete_book(id: int, token_data: dict = Depends(verify_role(["Admin"]))):
+    conn = get_conexion()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM Books WHERE ID = ?", (id,))
+    conn.commit()
+    conn.close()
+    return {"message": "Book deleted successfully"}
 
 @router.post("/agg")
 async def create_book(
