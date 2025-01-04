@@ -6,6 +6,7 @@ from routers.leans import router as leans
 from routers.fines import router as fines 
 from routers.reserves import router as reservers
 from routers.information import router as information
+from routers.registerData import router as registerData
 
 
 app = FastAPI()
@@ -15,6 +16,7 @@ app.include_router(leans)
 app.include_router(fines)
 app.include_router(reservers)
 app.include_router(information)
+app.include_router(registerData)
 
 origins = [
     "http://localhost:3000",  # Tu frontend en desarrollo (ajusta según sea necesario)

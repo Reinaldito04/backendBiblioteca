@@ -36,7 +36,7 @@ async def get_lean(token_data: dict = Depends(verify_role(["Admin"]))):
             Username=row[7],
             DateStart=row[4],
             DateEnd=row[5],
-            DateReal='No entregado aún' if row[8] == 'null' else row[8],
+            DateReal='No entregado aún' if row[8] is None else row[8],  # Maneja valores nulos aquí
 
         )
         for row in cursor.fetchall()
@@ -72,7 +72,7 @@ async def get_lean(name : str , title : str,token_data: dict = Depends(verify_ro
             Username=row[7],
             DateStart=row[4],
             DateEnd=row[5],
-            DateReal='No entregado aún' if row[8] == 'null' else row[8],
+            DateReal='No entregado aún' if row[8] is None else row[8],  # Maneja valores nulos aquí
         )
         for row in cursor.fetchall()
     ]
@@ -97,18 +97,19 @@ async def get_lean(name : str,token_data: dict = Depends(verify_role(["Admin","U
                     WHERE Users.Username = ?;
                    """, (name,))
     leans = [
-        LeanResponse(
-            IDBook=row[1],
-            Titulo=row[0],
-            Autor=row[2],
-            LeanID=row[6],
-            Username=row[7],
-            DateStart=row[4],
-            DateEnd=row[5],
-            DateReal='No entregado aún' if row[8] == 'null' else row[8],
-        )
-        for row in cursor.fetchall()
-    ]
+    LeanResponse(
+        IDBook=row[1],
+        Titulo=row[0],
+        Autor=row[2],
+        LeanID=row[6],
+        Username=row[7],
+        DateStart=row[4],
+        DateEnd=row[5],
+        DateReal='No entregado aún' if row[8] is None else row[8],  # Manejo de None
+    )
+    for row in cursor.fetchall()
+]
+
 
     conn.close()
     return leans
@@ -141,7 +142,6 @@ async def update_lean(id: int, lean: LeanUpdate, token_data: dict = Depends(veri
 
 @router.post('/agg')
 async def get_lean_agg(
-
     lean: Lean,
     token_data: dict = Depends(verify_role(["Admin"]))
 ):
@@ -150,18 +150,57 @@ async def get_lean_agg(
 
     # Obtener el ID del usuario
     cursor.execute("SELECT ID FROM Users WHERE Username = ?", (lean.Username,))
-    user_id = cursor.fetchone()[0]
+    user_data = cursor.fetchone()
+
+    if not user_data:
+        conn.close()
+        return JSONResponse(
+            content={"error": "El usuario no existe"},
+            status_code=400
+        )
+
+    user_id = user_data[0]
+
+
+ # Verificar si el usuario tiene multas pendientes
+    cursor.execute(
+        "SELECT COUNT(*) FROM Fines WHERE UserID = ? AND Estado = 'No pagada'",
+        (user_id,)
+    )
+    multas_pendientes = cursor.fetchone()[0]
+
+    if multas_pendientes > 0:
+        conn.close()
+        return JSONResponse(
+            content={"error": "El usuario tiene multas pendientes y no puede realizar préstamos"},
+            status_code=400
+        )
+
+    # Verificar si el usuario ya tiene 3 préstamos activos
+    cursor.execute(
+        "SELECT COUNT(*) FROM Leans WHERE IDUser = ? AND DateReal IS NULL",
+        (user_id,)
+    )
+    prestamos_activos = cursor.fetchone()[0]
+
+    if prestamos_activos >= 3:
+        conn.close()
+        return JSONResponse(
+            content={"error": "El usuario ya tiene 3 préstamos activos"},
+            status_code=400
+        )
 
     # Verificar si el libro tiene cantidad disponible
     cursor.execute(
-        "SELECT cantidad_disponible FROM Books WHERE ID = ?", (lean.IDBook,))
+        "SELECT cantidad_disponible FROM Books WHERE ID = ?", (lean.IDBook,)
+    )
     cantidad_disponible = cursor.fetchone()
 
     if cantidad_disponible is None or not cantidad_disponible[0].isdigit():
         conn.close()
         return JSONResponse(
             content={"error": "El libro no existe o la cantidad es inválida"},
-            status_code=400  # Código de estado para error de solicitud
+            status_code=400
         )
 
     # Convertir la cantidad de string a entero
@@ -171,13 +210,13 @@ async def get_lean_agg(
         conn.close()
         return JSONResponse(
             content={"error": "No hay suficientes copias disponibles del libro"},
-            status_code=400  # Código de estado para error de solicitud
+            status_code=400
         )
 
     # Insertar el préstamo en la tabla Leans
     cursor.execute(
         "INSERT INTO Leans (IdBook, IDUser, DateStart, DateEnd, DateReal) VALUES (?, ?, ?, ?, ?)",
-        (lean.IDBook, user_id, lean.DateStart, lean.DateEnd, "null")
+        (lean.IDBook, user_id, lean.DateStart, lean.DateEnd, None)
     )
 
     # Disminuir la cantidad de libros disponibles
@@ -192,5 +231,5 @@ async def get_lean_agg(
 
     return JSONResponse(
         content={"message": "Préstamo registrado con éxito"},
-        status_code=200  # Código de estado para éxito
+        status_code=200
     )

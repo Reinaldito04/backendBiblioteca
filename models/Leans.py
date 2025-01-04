@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class Lean(BaseModel):
     IDBook : int
@@ -14,7 +15,7 @@ class LeanResponse(BaseModel):
     Username : str 
     DateStart : str 
     DateEnd : str
-    DateReal : str
+    DateReal: Optional[str]  # Permite None como valor válido
     
 class LeanUpdate(BaseModel):
     DateReal : str
