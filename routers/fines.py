@@ -4,6 +4,7 @@ from models.Fines import Fines
 from db.db import get_conexion
 from routers.authUser import verify_role
 from datetime import datetime
+from typing import List, Dict
 
 router = APIRouter(
     prefix="/fines",
@@ -28,14 +29,14 @@ async def get_lean_agg(
                    (user_id,fines.IDLibro,fines.MontoMulta,fines.Estado,fines.IDLean))
     conn.commit()
     conn.close()
-    return JSONResponse(content={"message": "Fine added successfully"}, status_code=200)    
+    return JSONResponse(content={"message": "Multas agregadas con exito"}, status_code=200)    
 
 
 @router.get("/getFines")
-async def get_fines(token_data: dict = Depends(verify_role(["Admin"]))):
+async def get_fines(token_data: dict = Depends(verify_role(["Admin"]))) -> List[Dict]:
     conn = get_conexion()
     cursor = conn.cursor()
-    
+
     cursor.execute("""
         SELECT Fines.ID, Fines.Estado, Fines.MontoMulta, Leans.DateStart, Leans.DateEnd, Books.Titulo, Books.Autor, Users.Username 
         FROM Fines 
@@ -43,9 +44,13 @@ async def get_fines(token_data: dict = Depends(verify_role(["Admin"]))):
         INNER JOIN Books on Fines.IDLibro = Books.ID
         INNER JOIN Users on Fines.UserID = Users.ID
     """)
-    
+
     fines = cursor.fetchall()
     listFines = []
+    
+    # Definir cuánto aumenta la multa por cada día de retraso (ajusta el valor a tu necesidad)
+    multa_diaria = 5  # Por ejemplo, 5 unidades monetarias por cada día de retraso
+    
     for row in fines:
         # Convertir DateEnd a un objeto datetime
         date_end = datetime.strptime(row[4], "%Y-%m-%d")  # Asegúrate de que el formato coincide con tu base de datos
@@ -54,10 +59,16 @@ async def get_fines(token_data: dict = Depends(verify_role(["Admin"]))):
         # Calcular los días de retraso (si existe)
         delay_days = (current_date - date_end).days if current_date > date_end else 0
         
+        # Convertir MontoMulta a float antes de calcular la multa ajustada
+        monto_multa = float(row[2])  # Asegúrate de convertir MontoMulta a float
+
+        # Calcular la multa ajustada por el retraso
+        multa_ajustada = monto_multa + (delay_days * multa_diaria)
+        
         listFines.append({
             "ID": row[0],
             "Estado": row[1],
-            "MontoMulta": row[2],
+            "MontoMulta": multa_ajustada,  # Asignar la multa ajustada
             "DateStart": row[3],
             "DateEnd": row[4],
             "Titulo": row[5],

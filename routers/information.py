@@ -1,11 +1,41 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter,Depends,HTTPException
+from fastapi.responses import JSONResponse,FileResponse,StreamingResponse
 from db.db import get_conexion
 from routers.authUser import verify_role
+import os
+import aiofiles
+import shutil
+from typing import Generator
+from fastapi.staticfiles import StaticFiles
+
 router = APIRouter(
     prefix="/information",
     tags=["information"],
     responses={404: {"description": "Not found"}},
 )
+router.mount("/db", StaticFiles(directory="db"), name="db")
+
+DATABASE_PATH = "db/db.db"  # Cambia esta ruta a la ubicación de tu archivo SQLite
+BACKUP_PATH = "db/backup.db"  # Cambia esta ruta a la ubicación de la copia de seguridad
+def create_backup():
+    # Lógica para hacer el respaldo de la base de datos
+    backup_filename = "backup.db"
+    backup_path = os.path.join("db", backup_filename)
+    
+    # Aquí puedes generar el respaldo de la base de datos en el archivo `backup.db`
+    # Simulación de respaldo: simplemente copiamos un archivo de ejemplo
+    shutil.copy("db/db.db", backup_path)  # Esto es solo un ejemplo
+
+    return backup_path
+
+@router.get("/backup")
+async def download_backup():
+    # Crea el respaldo
+    backup_path = create_backup()
+
+    # Devuelve el archivo de respaldo
+    return FileResponse(backup_path, media_type='application/octet-stream', filename='backup.db')
+
 @router.get("/getBooksCantity")
 async def get_books_cantity( token_data: dict = Depends(verify_role(["Admin"]))):
     conn = get_conexion()

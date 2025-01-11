@@ -53,7 +53,7 @@ async def update_reserve(id: int, reserve : ReserveUpdate, token_data: dict = De
                    (reserve.Estado, id))
     conn.commit()
     conn.close()
-    return {"message": "Reserve updated successfully"}
+    return {"message": "Reserva actualizada correctamente"}
 @router.get('/get')
 async def get_reserves(token_data: dict = Depends(verify_role(["Admin"]))):
     conn = get_conexion()

@@ -70,7 +70,7 @@ async def edit_book(
     )
     conn.commit()
     conn.close()
-    return {"message": "Book updated successfully"}
+    return {"message": "Libro actualizado correctamente"}
 
 @router.delete('/delete/{id}')
 async def delete_book(id: int, token_data: dict = Depends(verify_role(["Admin"]))):
@@ -79,7 +79,7 @@ async def delete_book(id: int, token_data: dict = Depends(verify_role(["Admin"])
     cursor.execute("DELETE FROM Books WHERE ID = ?", (id,))
     conn.commit()
     conn.close()
-    return {"message": "Book deleted successfully"}
+    return {"message": "Libro eliminado correctamente"}
 
 @router.post("/agg")
 async def create_book(
@@ -119,6 +119,6 @@ async def create_book(
     )
     conn.commit()
     conn.close()
-    return {"message": "Book created"}
+    return {"message": "Libro agregado correctamente"}
 
 

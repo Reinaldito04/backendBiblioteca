@@ -137,7 +137,7 @@ async def update_lean(id: int, lean: LeanUpdate, token_data: dict = Depends(veri
     conn.commit()
 
     conn.close()
-    return {"message": "Lean updated successfully"}
+    return {"message": "Prestamo entregado correctamente"}
 
 
 @router.post('/agg')
